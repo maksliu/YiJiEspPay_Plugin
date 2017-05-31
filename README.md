@@ -6,19 +6,22 @@
 
 ## 境内渠道
 
-| 系统名称 | 版本  | 预授权操作 | 退款 | 收银台语言选择 | 下载地址 |
+| 系统名称 | 版本  | 预授权操作 | 退款操作 | 收银台语言选择 | 下载地址 |
 |---|---|---|---|---|---|
 |interspire shopping cart|6.9.1|不支持|不支持|支持| [点击](https://github.com/manarchliu/YiJiEspPayBy_INC_6.9.1/archive/master.zip) |
 |WooCommerce|..|不支持|支持|支持| [点击](https://github.com/manarchliu/WooCommerce_YiJiEspPay/archive/master.zip) |
 |Magento|1.9.2|支持|不支持|不支持| [点击]() |
+|Zencart|1.5.4|不支持|不支持|支持| [点击]() |
 
 ## 境外渠道
 
-| 系统名称 | 版本  | 预授权操作 | 退款 | 收银台语言选择 | 下载地址 |
+| 系统名称 | 版本  | 预授权操作 | 退款操作 | 收银台语言选择 | 下载地址 |
 |---|---|---|---|---|---|
 |interspire shopping cart|6.9.1|支持|支持|支持| [点击](https://github.com/manarchliu/YiJiEspPayBy_INC_6.9.1/archive/master.zip) |
 |WooCommerce|..|不支持|支持|支持| [点击](https://github.com/manarchliu/WooCommerce_YiJiEspPay/archive/master.zip) |
 |Magento|1.9.2|支持|不支持|支持| [点击]() |
+|Zencart|1.5.4|不支持|不支持|不支持| [点击]() |
+
 # QA
 
 Q1：为什么有的系统支持一些操作一些系统不支持？
