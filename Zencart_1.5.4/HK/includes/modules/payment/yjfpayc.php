@@ -2,7 +2,10 @@
 
     # declare yjfpayc submit page
     define('FILENAME_YJFPAYC_SUBMIT', 'yjfpayc.php');
-
+    #template file
+    // define('FILENAME_CHECKOUT_YJFPAY_HK', 'yjpayhk_process');
+    define('FILENAME_CHECKOUT_YJFPAY_HK', 'checkout_yjfpayhk');
+    define('DEBUG_URL', 'https://hkopenapitest.yiji.com/gateway.html');
     # import common functions
     require(DIR_FS_CATALOG . DIR_WS_MODULES . '/payment/yjfpayc/common_functions.php');
 
@@ -28,19 +31,23 @@
 
             $this->code        = 'yjfpayc';
             $this->title       = MODULE_PAYMENT_YJFPAYC_TEXT_TITLE;
-            $this->description = MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION;
+            $this->description = MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION_ADMIN;
             $this->sort_order  = defined('MODULE_PAYMENT_YJFPAYC_SORT_ORDER') ? MODULE_PAYMENT_YJFPAYC_SORT_ORDER : null;
             $this->enabled     = defined('MODULE_PAYMENT_YJFPAYC_STATUS') ? MODULE_PAYMENT_YJFPAYC_STATUS == 'True' : false;
 
             if (is_object($order)) $this->update_status();
+            // var_dump($order);
+            // exit();
 
-            /*
-            if (MODULE_PAYMENT_YJFPAYC_GATEWAY_URL == 'True') {
-                $this->form_action_url = self::PRODUCT_URL;
-            } else {
-                $this->form_action_url = self::DEBUG_URL;
-            }
-            */
+            # payment url yoko debug
+            // $this->form_action_url = zen_href_link(FILENAME_CHECKOUT_YJFPAY_HK, '', 'SSL');
+
+            // if (MODULE_PAYMENT_YJFPAYC_GATEWAY_URL == 'True') {
+            //     $this->form_action_url = self::PRODUCT_URL;
+            // } else {
+            //     $this->form_action_url = self::DEBUG_URL;
+            // }
+            
         }
 
         function update_status() {
@@ -79,7 +86,7 @@
         function selection() {
             return array(
                 'id'     => $this->code,
-                'module' => $this->title . '<br/>' . MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION
+                'module' => $this->title . '<br/>' . MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION_ADMIN
             );
         }
 
@@ -92,6 +99,7 @@
         }
 
         function  confirmation() {
+
             return array();
         }
 
@@ -102,7 +110,6 @@
         function before_process() {
             /*
                 global $messageStack;
-
 
                 if (!$_GET['referer'] || !$_GET['params'] || $_GET['referer'] != 'yjfpayc') {
                     $messageStack->add('error');
@@ -166,10 +173,10 @@
             # write business process
             $db->perform(TABLE_YJFPAYC_HISTORY, $order_history_array);
             $db->perform(TABLE_ORDERS, $order_update_array, 'update', 'orders_id = ' . $insert_id);
-
+            
             # set payment method message
-            $_SESSION['payment_method_messages'] = $this->_submitFrame($insert_id);
-
+            $_SESSION['yjhk_payment_method_messages'] = $this->_submitFrame($insert_id);
+            zen_redirect(zen_href_link(FILENAME_CHECKOUT_YJFPAY_HK, '', 'SSL'));
             return false;
         }
 
@@ -195,6 +202,9 @@
             $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_SUBMIT_STATUS_ID_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_SUBMIT_STATUS_ID', '0', '" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_SUBMIT_STATUS_ID_DESCRIPTION . "', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
             $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_PAYMENT_STATUS_ID_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_PAYMENT_STATUS_ID', '0', '" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_PAYMENT_STATUS_ID_DESCRIPTION . "', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
             $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_AUTHORIZE_STATUS_ID_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_AUTHORIZE_STATUS_ID', '0', '" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_AUTHORIZE_STATUS_ID_DESCRIPTION . "', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
+
+            $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function,date_added) values ('" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_PAYMENT_LANGUAGE_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_PAYMENT_LANGUAGE', 'en', '" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_PAYMENT_LANGUAGE_DESCRIPTION . "', '6', '8', 'zen_cfg_select_option(array(\'en\', \'ja\',\'fr\',\'de\',\'esp\'),', now())");
+
             $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_FAIL_STATUS_ID_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_FAIL_STATUS_ID', '0', '" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_FAIL_STATUS_ID_DESCRIPTION . "', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
             $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, use_function, set_function, date_added) values ('" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_ZONE_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_ZONE', '', '" . MODULE_PAYMENT_YJFPAYC_CONFIGURATION_ZONE_DESCRIPTION . "', '6', '7', 'zen_get_zone_class_title', 'zen_cfg_pull_down_zone_classes(', now())");
             $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('" . MODULE_PAYMENT_YJFPAYC_GATEWAY_URL_TITLE . "', 'MODULE_PAYMENT_YJFPAYC_GATEWAY_URL', 'True', '" . MODULE_PAYMENT_YJFPAYC_GATEWAY_URL_DESCRIPTION . "', '7', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now());");
@@ -249,6 +259,7 @@ EOF;
                 'MODULE_PAYMENT_YJFPAYC_PAYMENT_STATUS_ID',
                 'MODULE_PAYMENT_YJFPAYC_AUTHORIZE_STATUS_ID',
                 'MODULE_PAYMENT_YJFPAYC_FAIL_STATUS_ID',
+                'MODULE_PAYMENT_YJFPAYC_PAYMENT_LANGUAGE',
                 'MODULE_PAYMENT_YJFPAYC_ZONE',
                 'MODULE_PAYMENT_YJFPAYC_GATEWAY_URL',
                 'MODULE_PAYMENT_YJFPAYC_SORT_ORDER'
@@ -274,7 +285,7 @@ EOF;
         function _doRefund($orderID) {
             # global member
             global $db, $messageStack;
-            file_put_contents('E:/log/hkzencart/refund.log', 'refun');
+            // file_put_contents('E:/log/hkzencart/refund.log', 'refun');
             $history      = $this->_readHistory($orderID);
             $refundReason = $_POST['refundReason'];
 
@@ -343,7 +354,7 @@ EOF;
                     $db->perform(TABLE_ORDERS_STATUS_HISTORY, $order_status_history_array);
                 }
 
-                $messageStack->add_session($result->resultMessage, 'success');
+                $messageStack->add_session($result->description, 'success');
             }
 
             return true;
@@ -352,14 +363,14 @@ EOF;
         function _doCapt($orderID, $amt = 0, $currency = 'USD') {
             # global var
             global $db, $messageStack;
-            file_put_contents('E:/log/hkzencart/capt.log', 'orderID:' . $orderID . 'currency:' . $currency . 'post_auth' . $_POST['authorize']);
+            // file_put_contents('E:/log/hkzencart/capt.log', 'orderID:' . $orderID . 'currency:' . $currency . 'post_auth' . $_POST['authorize']);
             $history = $this->_readHistory($orderID);
 
             # check history record
             if ($history->RecordCount() && !$history->EOF) {
                 # if current status is not authorize
                 if ($history->fields['status'] != 2) return true;
-                file_put_contents('E:/log/hkzencart/_pay_authorize_post.log', json_encode($_POST,true),FILE_APPEND);
+                // file_put_contents('E:/log/hkzencart/_pay_authorize_post.log', json_encode($_POST,true),FILE_APPEND);
 
                 if (isset($_POST['authorize'])) {
                     $result = $this->_pay_authorize($orderID, $history->fields['order_no'], 'true', $_POST['resolveReason']);
@@ -373,7 +384,7 @@ EOF;
                     $db->perform(TABLE_YJFPAYC_HISTORY, $update_history_array, 'update', 'order_id=' . $orderID);
                 }
 
-                $messageStack->add_session($result->resultMessage, 'success');
+                $messageStack->add_session($result->description, 'success');
             }
 
             return true;
@@ -385,11 +396,11 @@ EOF;
                 'orderNo'      => date('YmdHis') . rand(100000, 999999),
                 'service'      => 'cardAcquiringPresaleResult',
                 'partnerId'    => MODULE_PAYMENT_YJFPAYC_PARTNER_ID,
-                'merchOrderNo' => $orderID,
+                'merchOrderNo' => $orderID . date('YmdHis'),
                 'refundAmount' => $refundAmount,
                 'refundReason' => $refundReason,
-                'returnUrl'    => '',
-                'notifyUrl'    => '',
+                // 'returnUrl'    => '',
+                // 'notifyUrl'    => '',
                 'type'         => 'QUICK_REFUND',
                 'isAccept'        => $isAccept,
                 'originalMerchOrderNo'=> $orderID,
@@ -407,11 +418,11 @@ EOF;
                 'orderNo'      => date('YmdHis') . rand(100000, 999999),
                 'service'      => 'cardAcquiringRefund',
                 'partnerId'    => MODULE_PAYMENT_YJFPAYC_PARTNER_ID,
-                'merchOrderNo' => $orderID,
+                'merchOrderNo' => $orderID . date('YmdHis'),
                 'refundAmount' => $refundAmount,
                 'refundReason' => $refundReason,
-                'returnUrl'    => '',
-                'notifyUrl'    => '',
+                // 'returnUrl'    => '',
+                // 'notifyUrl'    => '',
                 'type'         => 'DEFAULT_REFUND',
                 'originalMerchOrderNo'=> $orderID,
             );
@@ -432,15 +443,15 @@ EOF;
                 'merchOrderNo'    => $orderID . date('YmdHis'),
                 'resolveReason'   => $resolveReason,
                 'isAccept'        => $isAccept,
-                'originalOrderNo' => $orderNo,
-                'returnUrl'       => '',
-                'notifyUrl'       => '',
+                // 'originalOrderNo' => $orderNo,
+                // 'returnUrl'       => '',
+                // 'notifyUrl'       => '',
                 'originalMerchOrderNo'=> $orderID,
             );
-            file_put_contents('E:/log/hkzencart/_pay_authorize.log', json_encode($submit,true));
+            // file_put_contents('E:/log/hkzencart/_pay_authorize.log', json_encode($submit,true));
             $submit['sign'] = yjfpayc_signature($submit);
             $result         = $this->_execute($submit);
-            file_put_contents('E:/log/hkzencart/_pay_authorize_result.log', $result);
+            // file_put_contents('E:/log/hkzencart/_pay_authorize_result.log', $result);
             return json_decode($result);
         }
 
@@ -519,7 +530,8 @@ EOF;
                 ));
             }
 
-            return array('goodsInfoOrders' => json_encode($optionProducts, JSON_UNESCAPED_UNICODE));
+            // return array('goodsInfoOrders' => json_encode($optionProducts, JSON_UNESCAPED_UNICODE));
+            return array('goodsInfoOrders' => json_encode($optionProducts));
         }
 
         /**
@@ -538,7 +550,7 @@ EOF;
                 'orderAmount'   => $total,
                 // 'webSite'       => 'www.baidu.com', # $_SERVER['HTTP_HOST'],
                 'webSite'       => $_SERVER['HTTP_HOST'],
-                'merchOrderNo'  => date('YmdHis') . $orderID,
+                'merchOrderNo'  => $orderID,
                 'Remark'        => $this->_filterValue($order->info['comments']),
                 'acquiringType' => MODULE_PAYMENT_YJFPAYC_ACQUIRING_TYPE
             );
@@ -593,7 +605,8 @@ EOF;
                 'merchantName'        => MODULE_PAYMENT_YJFPAYC_MERCHANT_EMAIL,
             );
 
-            return array('attachDetails' => json_encode($detail, JSON_UNESCAPED_UNICODE));
+            return array('attachDetails' => json_encode($detail));
+            // return array('attachDetails' => json_encode($detail, JSON_UNESCAPED_UNICODE));
         }
 
         /**
@@ -603,31 +616,8 @@ EOF;
          */
         protected function _orderTotal($order) {
             $old_total      = $order->info['total'];
-            $currency_val   = $order->info['currency_value'];
-            $new_total      = $old_total*$currency_val;
             // $new_total = ($order->info['total'])*($order->info['currency_value']);
-            return $new_total;
-            // return $order->info['total'];
-            /*
-            if (MODULE_ORDER_TOTAL_INSTALLED) {
-                echo 'total:', MODULE_ORDER_TOTAL_INSTALLED, 'install', ' < br />';
-                echo DIR_WS_CLASSES . 'order_total . php';
-
-                # include order total module
-                require(DIR_WS_CLASSES . 'order_total . php');
-
-                $order_total_modules = new order_total();
-                $order_totals        = $order_total_modules->process();
-
-                foreach ($order_totals as $total) {
-                    if ($total['code'] == 'ot_total') {
-                        return $total['value'];
-                    }
-                }
-            }
-
-            return $order->info['total'];
-            */
+            return $old_total;
         }
 
 

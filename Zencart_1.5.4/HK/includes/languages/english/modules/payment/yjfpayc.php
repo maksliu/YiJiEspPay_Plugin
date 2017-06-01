@@ -1,8 +1,9 @@
 <?php
 
     # payment information
-    define('MODULE_PAYMENT_YJFPAYC_TEXT_TITLE', 'Credit-Card Payment - HK');
-    define('MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION', '<strong>YJF </strong>：make cross-boader payment by credit card');
+    define('MODULE_PAYMENT_YJFPAYC_TEXT_TITLE', 'Credit-Card Payment-HK');
+    define('MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION', '<img src=includes/modules/pages/yjpayhk/images/V.jpg alt="Pay with Credit Cards" title="Pay with Credit Cards"><img src=includes/modules/pages/yjpayhk/images/M.jpg alt="Pay with Credit Cards" title="Pay with Credit Cards"><img src=includes/modules/pages/yjpayhk/images/J.jpg alt="Pay with Credit Cards" title="Pay with Credit Cards"><strong>YJF </strong>：make cross-boader payment by credit card');
+    define('MODULE_PAYMENT_YJFPAYC_TEXT_DESCRIPTION_ADMIN', '<strong>YJFPAY </strong>：make cross-boader payment by credit card');
 
 
     # configuration const define
@@ -38,6 +39,10 @@
 
     define('MODULE_PAYMENT_YJFPAYC_CONFIGURATION_ZONE_TITLE', ' Payment Zone');
     define('MODULE_PAYMENT_YJFPAYC_CONFIGURATION_ZONE_DESCRIPTION', 'If you choose a payment zone,then the payment module can be used in this zone');
+
+    define('MODULE_PAYMENT_YJFPAYC_CONFIGURATION_PAYMENT_LANGUAGE_TITLE', ' Payment language');
+    define('MODULE_PAYMENT_YJFPAYC_CONFIGURATION_PAYMENT_LANGUAGE_DESCRIPTION', 'Payment language by show payment page example en:English  jp:Japanese  de:Deutsch  esp:El español  fr:Français');
+
 
     define('MODULE_PAYMENT_YJFPAYC_GATEWAY_URL_TITLE', ' Debug mode');
     define('MODULE_PAYMENT_YJFPAYC_GATEWAY_URL_DESCRIPTION', ' if you choose debug mode, then the payment is a test');
@@ -113,7 +118,7 @@
     define('MODULE_PAYMENT_YJFPAYC_STATUS_5', 'Cancel Order');
 
     define('NAVBAR_TITLE_1', 'Checkout');
-    define('NAVBAR_TITLE_2', 'Credit-Card Payment - HK');
+    define('NAVBAR_TITLE_2', 'Credit-Card Payment');
 
     define('MODULE_PAYMENT_YJFPAYC_NOT_PAY_OR_WAIT_PAY', 'Do \'t pay or wait paying');
 

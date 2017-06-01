@@ -13,7 +13,7 @@
     /**
      * @const string product url address
      */
-    define('YJFPAYC_PRODUCT_URL', 'http://openapi.yjpay.hk/gateway.html');
+    define('YJFPAYC_PRODUCT_URL', 'https://openapi.yjpay.hk/gateway.html');
 
     /**
      * get pay signature
