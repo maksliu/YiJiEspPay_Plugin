@@ -108,7 +108,7 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
                     //"default" => $this->GetName(),
             "options"=>array(
                 'English'=>'en',
-                'Japanese'=>'jp',
+                'Japanese'=>'ja',
                 'Deutsch'=>'de',
                 'El español'=>'es',
                 'Français'=>'fr'

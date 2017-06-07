@@ -104,7 +104,7 @@ class CHECKOUT_YIJIESPPAYCN extends ISC_CHECKOUT_PROVIDER
             "default" => 'en',
             "options"=>array(
                 'English'=>'en',
-                'Japanese'=>'jp',
+                'Japanese'=>'ja',
                 'Deutsch'=>'de',
                 'El español'=>'es',
                 'Français'=>'fr'
