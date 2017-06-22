@@ -116,6 +116,23 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
             "required" => false
         );
 
+        $this->_variables['Currency'] = array(
+            "name" => "payment language",
+            "type" => "dropdown",
+            "help" => 'pelace select Currency',
+                    //"default" => $this->GetName(),
+            "options"=>array(
+                'RMB'=>'CNY',
+                'United States dollar'=>'USD',
+                'Canadian dollar'=>'CAD',
+                'Hong Kong dollars'=>'HKD',
+                'Europe dollars'=>'EUR',
+                'United Kingdom dollars'=>'GBP',
+                'Japan\'s dollars'=>'JPY',
+            ),
+            "required" => false
+        );
+
     }
 
     /**
@@ -135,10 +152,10 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
         $requset_data['orderNo'] = date('YmdHis').mt_rand(1000000,9999999);
         $requset_data['webSite'] = $this->GetValue('webSite');
         $requset_data['merchOrderNo'] = $this->GetCombinedOrderId();
-        $requset_data['currency'] = 'USD';
+        $requset_data['currency'] = $this->GetValue('Currency');
         $requset_data['orderAmount'] = $this->GetGatewayAmount();
         $requset_data['acquiringType'] = $this->GetValue('acquiringType');
-        $requset_data['returnUrl'] = GetConfig('ShopPathSSL').'/finishorder.php';
+        $requset_data['returnUrl'] = GetConfig('ShopPathSSL').'/yiji_return.php';
         $requset_data['notifyUrl'] = GetConfig('ShopPathSSL').'/checkout.php?action=gateway_ping&provider='.$this->GetId();
 
         $get_order_products = " SELECT `ordprodid`,`ordprodname`,`ordprodqty`,`base_price` FROM [|PREFIX|]order_products WHERE orderorderid = ".$this->GetCombinedOrderId();
@@ -149,20 +166,33 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
             $result_data[] = $row;
         }
         $orderGoodsInfo = array();
+        $logisticsFee = 0;
         foreach ($result_data as $k=>$v){
             $orderGoodsInfo[$k]['goodsNumber'] = $v['ordprodid'];
             $orderGoodsInfo[$k]['goodsName'] = $v['ordprodname'];
             $orderGoodsInfo[$k]['goodsCount'] = $v['ordprodqty'];
             $orderGoodsInfo[$k]['itemSharpProductcode'] = mt_rand(1,100);
             $orderGoodsInfo[$k]['itemSharpUnitPrice'] = $v['base_price'];
+            //$logisticsFee = $v['shipping_cost_inc_tax'];
         }
 
         $requset_data['goodsInfoOrders'] = json_encode($orderGoodsInfo);
 
+        /**
+        * 获取订单物流信息
+        */
+        $get_order_logistics = 'SELECT `base_cost`,`method` FROM [|PREFIX|]order_shipping WHERE order_id = '.$this->GetCombinedOrderId();
+        $order_logistics_result = $GLOBALS['ISC_CLASS_DB']->Query($get_order_logistics);
+        $order_logistics_data = array();
+        while($row = $GLOBALS['ISC_CLASS_DB']->Fetch($order_logistics_result)){
+            $order_logistics_data[] = $row;
+        }
+
         $billingDetails = $this->GetBillingDetails();
         $ShippingAddress = $this->getShippingAddress();
         $attachDetails = array(
-            'ipAddress'=>$this->getIp(),
+            //'ipAddress'=>$this->getIp(),
+            'ipAddress'=>'113.204.226.234',
             'billtoCountry'=>$billingDetails['ordbillcountrycode'],
             'billtoState'=>$billingDetails['ordbillstate'],
             'billtoCity'=>$billingDetails['ordbillsuburb'],
@@ -182,15 +212,17 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
             'shiptoState'=>$ShippingAddress['state'],
             'shiptoStreet'=>$ShippingAddress['address_1'],
             #物流费
-            'logisticsFee'=>20.00,
+            'logisticsFee'=>$order_logistics_data[0]['base_cost'],
             #物流方式
-            'logisticsMode'=>'Flat Rate Per Order',
+            'logisticsMode'=>$order_logistics_data[0]['method'],
             'customerEmail'=>$ShippingAddress['email'],
             'customerPhonenumber'=>$ShippingAddress['phone'],
         );
         $requset_data['attachDetails'] = json_encode($attachDetails);
         $requset_data['language'] = $this->GetValue('Language');
 
+        //var_dump($requset_data);
+        //exit();
         $requset_data['sign'] = $this->getSignString($requset_data);
         $this->RedirectToProvider($requset_url, $requset_data);
     }
@@ -214,40 +246,84 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
      * 回调处理
      */
     public function ProcessGatewayPing(){
-
-        //file_put_contents(dirname(__FILE__) ."/".$_REQUEST['merchOrderNo']."_read.txt",json_encode($_REQUEST),FILE_APPEND);
+    try{
+      # 1、检查签名是否一致
         if($this->checkNotifySign($_REQUEST)){
 
+          $order_info = GetOrder($_REQUEST['merchOrderNo']);
+          $extra  = array("tradeNo"=>$_REQUEST['merchOrderNo'],"orderNo"=>$_REQUEST['merchOrderNo'],"orderAmount"=>$order_info['total_inc_tax'],"orderCurrency"=>$this->GetValue('Currency'),"orderStatus"=>'');
+          $newTransaction = array(
+  			'providerid' => $this->GetId(),
+  			'transactiondate' => time(),
+  			'transactionid' => $this->GetCombinedOrderId(),
+  			'orderid' => array_keys($this->GetOrders()),
+  			'message' => '',
+  			'status' => '',
+  			'amount' => $order_info['total_inc_tax'],
+  			'extrainfo' => array()
+          );
+          # 2、获取当前订单状态
+          $transaction = GetClass('ISC_TRANSACTION');
+
             if($_REQUEST['resultCode'] == 'EXECUTE_SUCCESS'){
-                $updatedOrder = array('ordpayproviderid'=>$_REQUEST['orderNo']);
+                # 3、查看订单回调的订单状态
                 switch ($_REQUEST['status']){
                     case 'success':
-                        $updatedOrder['ordpaymentstatus']  = 'success';
-                        $updatedOrder['ordstatus']  = 9;
+                        $extra['orderStatus'] = ORDER_STATUS_AWAITING_SHIPMENT;
+                        $GLOBALS['ISC_CLASS_LOG']->LogSystemSuccess(array('payment', $this->GetName()), GetLang('YiJiPaySuccess'), $extra);
+                        $newTransaction['status'] = TRANS_STATUS_COMPLETED;
+                        $order_status = ORDER_STATUS_AWAITING_SHIPMENT;
                         break;
                     case 'fail':
-                        $updatedOrder['ordpaymentstatus']  = 'fail';
-                        $updatedOrder['ordstatus']  = 7;
+                        $order_status = ORDER_STATUS_DECLINED;
+                        $newTransaction['status'] = TRANS_STATUS_FAILED;
+                        $extra['orderStatus'] = ORDER_STATUS_DECLINED;
+                        $GLOBALS['ISC_CLASS_LOG']->LogSystemError(array('payment', $this->GetName()), GetLang('YiJiPaySuccess'), $extra);
                         break;
                     case 'authorizing':
-                        $updatedOrder['ordpaymentstatus']  = 'authorizing';
-                        $updatedOrder['ordstatus']  = 11;
+                        $order_status = ORDER_STATUS_AWAITING_FULFILLMENT;
+                        $extra['orderStatus'] = ORDER_STATUS_AWAITING_FULFILLMENT;
+                        $GLOBALS['ISC_CLASS_LOG']->LogSystemSuccess(array('payment', $this->GetName()), GetLang('YiJiPaySuccess'), $extra);
                         break;
 
                 }
-                $result = $GLOBALS['ISC_CLASS_DB']->UpdateQuery('orders', $updatedOrder, "orderid='".(int)$_REQUEST['merchOrderNo']."'");
 
-                echo $result ? 'success' : 'final';
+                $newTransaction['message'] = json_encode($_REQUEST);
+
+                $transactionId = $transaction->Create($newTransaction);
+                $orderInfo = array($_REQUEST['merchOrderNo']=>GetOrder($_REQUEST['merchOrderNo']));
+                foreach ($orderInfo as $orderId => $order) {
+                  UpdateOrderStatus($orderId, $order_status);
+
+                }
+                EmptyCartAndKillCheckout();
+                exit('success');
             }else{
-                echo 'final';
+                exit('final');
             }
 
         }else{
-            echo 'final';
+          exit('final');
         }
 
 
+        }catch (ErrorException $exception){
+            file_put_contents(dirname(__FILE__) ."/logs/".$_REQUEST['merchOrderNo']."_read.txt","[".date('Y-m-d H:i:s')." OrderInfo ]   ".json_encode($exception)."\n\n\n",FILE_APPEND);
+        }
+    }
 
+    public function VerifyOrderPayment()
+    {
+        file_put_contents(dirname(__FILE__) ."/logs/66668888_read.txt","[".date('Y-m-d H:i:s')." OrderInfo ]   ".json_encode($_REQUEST)."\n\n\n",FILE_APPEND);
+        if(!empty($_COOKIE['SHOP_ORDER_TOKEN'])) {
+            if($this->GetOrderStatus() == ORDER_STATUS_INCOMPLETE) {
+                $this->SetPaymentStatus(PAYMENT_STATUS_PENDING);
+            }
+            return true;
+        }else{
+            $GLOBALS['ISC_CLASS_LOG']->LogSystemError(array('payment', $this->GetName()), GetLang('PayPalErrorInvalid'), __FUNCTION__);
+            return false;
+        }
     }
 
     /**
@@ -303,14 +379,18 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
         foreach($fields as $name => $value) {
             $formFields .= "<input type=\"hidden\" name=\"".isc_html_escape($name)."\" value=\"".isc_html_escape($value)."\" />\n";
         }
-
+// target="iframe_a" <iframe width="100%"  name="iframe_a" style="border-width:0px;height:700px;">
+          //<script type="text/javascript">
+            //  alert(window.location.href); target="_blank"
+          //</script>
+      //</iframe>
         $GLOBALS['PAYPAGE'] = '
-			<iframe width="100%"  name="iframe_a" style="border-width:0px;height:700px;">
-                <script type="text/javascript">
-                    alert(window.location.href);
-                </script>
-            </iframe>
-			<form id="form_pay" action="'.$url.'" method="post" style="margin-top: 50px; text-align: center;" target="iframe_a">
+        <iframe width="100%"  name="iframe_a" style="border-width:0px;height:700px;">
+                  <script type="text/javascript">
+                   alert(window.location.href); target="_blank"
+                  </script>
+      </iframe>
+			<form id="form_pay" action="'.$url.'" method="post" style="margin-top: 50px; text-align: center;" target="iframe_a" >
 				<noscript><input type="submit" value="'.GetLang('ClickIfNotRedirected').'" /></noscript>
 				<div id="ContinueButton" style="display: none;">
 					<!--input type="submit" value="'.GetLang('ClickIfNotRedirected').'" /-->
@@ -318,18 +398,10 @@ class CHECKOUT_YIJIESPPAY extends ISC_CHECKOUT_PROVIDER
 				'.$formFields.'
 			</form>
 			<script type="text/javascript">
-				/*window.onload = function() {
-					document.forms[0].submit();
-					setTimeout(function() {
-						document.getElementById("ContinueButton").style.display = "";
-					}, 1000);
-				}*/
 				$(function(){
 				    $("#form_pay").submit();
 				})
-			</script>
-
-		';
+			</script>';
         $GLOBALS['ISC_CLASS_TEMPLATE']->SetPageTitle(sprintf("%s - %s",'pay','pay'));
         $GLOBALS['ISC_CLASS_TEMPLATE']->SetTemplate("checkout_paypage");
         $GLOBALS['ISC_CLASS_TEMPLATE']->ParseTemplate();
