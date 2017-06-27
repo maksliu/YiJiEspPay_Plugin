@@ -250,38 +250,56 @@ function yjpayesp_gateway_init (){
 
 
         /**
-        * 付款完成同步跳转通知页面
-        */
-        public function thankyou_page() {
-          $order = new WC_Order($_REQUEST['merchOrderNo']);
-          $msg = '';
-          $color = '';
-          switch ($order->post_status){
-            case "wc-failed": #支付失败
-            $msg = 'the order has fail , pelace reSubmit Order';
-            $color = 'red';
-            break;
+         * 付款完成同步跳转通知页面
+         */
+         public function thankyou_page() {
+           $order = new WC_Order($_REQUEST['merchOrderNo']);
 
-            case "on-hold": # 预售权
-            $msg = 'We are processing this order';
-            $color = 'yellow';
-            break;
-            case "wc-processing": # 支付成功
-            $msg = 'We will give you delivery';
-            $color = 'green';
-            break;
-            case "":
-            $msg = 'sorry have error';
-            $color = 'red';
-            break;
-          }
+           $sign = $_GET['sign'];
 
-          echo "<div style='color:$color'>$msg</div><script type='application/javascript'>if (window.frames.length != parent.frames.length) {
-            window.top.location.href = '';
-          }</script>";
-          exit;
+           unset($_GET['sign']);
+           unset($_GET['key']);
 
-        }
+           if($this->getSignString($_GET) == $sign){
+               if($_GET['description'] == 'processing'){
+                   $update_static = $order->update_status('processing', __($_REQUEST['status'],$this->id));
+               }
+           }
+
+           $msg = '';
+           $color = '';
+           switch ($order->post_status){
+             case "wc-failed": #支付失败
+             $msg = 'the order has fail , pelace reSubmit Order';
+             $color = 'red';
+             break;
+
+             case "on-hold": # 预售权
+             $msg = 'We are processing this order';
+             $color = 'yellow';
+             break;
+
+             case "wc-processing": # 支付成功
+             $msg = 'We will give you delivery';
+             $color = 'green';
+             break;
+
+             case "processing": # 订单处理
+             $msg = 'Waiting for notification ...';
+             $color = 'yellow';
+             break;
+             case "":
+             $msg = 'sorry have error';
+             $color = 'red';
+             break;
+           }
+
+           echo "<div style='background:$color; color:#fff;'>$msg</div><script type='application/javascript'>if (window.frames.length != parent.frames.length) {
+             window.top.location.href = '';
+           }</script>";
+           //exit;
+
+         }
 
 
         /**
