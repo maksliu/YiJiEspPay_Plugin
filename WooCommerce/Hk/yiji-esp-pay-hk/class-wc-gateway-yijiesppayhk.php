@@ -262,7 +262,7 @@ function yjpayesp_gateway_init (){
 
            if($this->getSignString($_GET) == $sign){
                if($_GET['description'] == 'processing'){
-                   $update_static = $order->update_status('processing', __($_REQUEST['status'],$this->id));
+                   $update_static = $order->update_status('on-hold', __($_REQUEST['status'],$this->id));
                }
            }
 
