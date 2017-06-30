@@ -4,7 +4,7 @@
     require(DIR_WS_MODULES . '/payment/yjfpayc/common_functions.php');
 
     /* notify data */
-   // $_POST = array(
+   // filter_input_array(INPUT_POST) = array(
    //              'orderNo' => '20151025874081445761309',
    //              'merchOrderNo' => '38',
    //              'notifyTime' => '2016-10-17 16:19:27',
@@ -22,22 +22,22 @@
    //              'description' => 'authoriziing order infos',
    //          );
 
-   //  file_put_contents('E:/log/hkzencart/post_auth.log', json_encode($_POST,true));
+   //  file_put_contents('E:/log/hkzencart/post_auth.log', json_encode(filter_input_array(INPUT_POST),true));
 
     global $db;
 
-    $sign = array_key_pop($_POST, 'sign');
+    $sign = array_key_pop(filter_input_array(INPUT_POST), 'sign');
 
     # check sign security
-    if ($sign == yjfpayc_signature($_POST)) {
+    if ($sign == yjfpayc_signature(filter_input_array(INPUT_POST))) {
     // if (true) {
         # read order status
-        $orderID = $_POST['merchOrderNo'];
+        $orderID = filter_input(INPUT_POST,'merchOrderNo');
 
-        // file_put_contents('E:/log/hkzencart/merorder', $_POST['merchOrderNo']);
-        // file_put_contents('E:/log/hkzencart/notify.log', json_encode($_POST,true));
+        // file_put_contents('E:/log/hkzencart/merorder', filter_input(INPUT_POST,'merchOrderNo'));
+        // file_put_contents('E:/log/hkzencart/notify.log', json_encode(filter_input_array(INPUT_POST),true));
 
-        $status  = strtolower($_POST['status']);
+        $status  = strtolower(filter_input(INPUT_POST,'status'));
 
         if ($orderHistory = read_pay_history($db, $orderID)) {
             # process notify status
@@ -61,8 +61,8 @@
             array('fieldName' => 'orders_id', 'type' => 'integer', 'value' => $order_id),
             array('fieldName' => 'orders_status_id', 'type' => 'integer', 'value' => MODULE_PAYMENT_YJFPAYC_PAYMENT_STATUS_ID),
             array('fieldName' => 'date_added', 'type' => 'date', 'value' => date('Y-m-d H:i:s')),
-            // array('fieldName' => 'comments', 'type' => 'string', 'value' => $_POST['resultMessage'] . '(' . $_POST['resultCode'] . ')')
-            array('fieldName' => 'comments', 'type' => 'string', 'value' => $_POST['description'] . '(' . $_POST['resultCode'] . ')')
+            // array('fieldName' => 'comments', 'type' => 'string', 'value' => filter_input(INPUT_POST,'resultMessage') . '(' . filter_input(INPUT_POST,'resultCode') . ')')
+            array('fieldName' => 'comments', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description') . '(' . filter_input(INPUT_POST,'resultCode') . ')')
         );
 
         $orderUpdate = array(
@@ -73,8 +73,8 @@
             array('fieldName' => 'status', 'type' => 'integer', 'value' => 3),
             array('fieldName' => 'pay_date', 'type' => 'date', 'value' => date('Y-m-d H:i:s')),
             array('fieldName' => 'pay_status', 'type' => 'string', 'value' => 'success'),
-            // array('fieldName' => 'pay_message', 'type' => 'string', 'value' => $_POST['resultMessage'] . '(' . $_POST['resultCode'] . ')')
-            array('fieldName' => 'pay_message', 'type' => 'string', 'value' => $_POST['description'] . '(' . $_POST['resultCode'] . ')')
+            // array('fieldName' => 'pay_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'resultMessage') . '(' . filter_input(INPUT_POST,'resultCode') . ')')
+            array('fieldName' => 'pay_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description') . '(' . filter_input(INPUT_POST,'resultCode') . ')')
         );
 
         $db->perform(TABLE_ORDERS_STATUS_HISTORY, $statusHistory);
@@ -89,8 +89,8 @@
             array('fieldName' => 'orders_id', 'type' => 'integer', 'value' => $orderID),
             array('fieldName' => 'orders_status_id', 'type' => 'integer', 'value' => MODULE_PAYMENT_YJFPAYC_AUTHORIZE_STATUS_ID),
             array('fieldName' => 'date_added', 'type' => 'date', 'value' => date('Y-m-d H:i:s')),
-            // array('fieldName' => 'comments', 'type' => 'string', 'value' => $_POST['authorizingInfo'])
-            array('fieldName' => 'comments', 'type' => 'string', 'value' => $_POST['description'])
+            // array('fieldName' => 'comments', 'type' => 'string', 'value' => filter_input(INPUT_POST,'authorizingInfo'))
+            array('fieldName' => 'comments', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description'))
         );
 
         $orderUpdate = array(
@@ -101,10 +101,10 @@
             array('fieldName' => 'status', 'type' => 'integer', 'value' => 2),
             array('fieldName' => 'pay_date', 'type' => 'date', 'value' => date('Y-m-d H:i:s')),
             array('fieldName' => 'pay_status', 'type' => 'string', 'value' => 'authorizing'),
-            array('fieldName' => 'pay_message', 'type' => 'string', 'value' => $_POST['resultMessage'] . '(' . $_POST['resultCode'] . ')'),
-            // array('fieldName' => 'pay_message', 'type' => 'string', 'value' => $_POST['description']),
-            // array('fieldName' => 'auth_message', 'type' => 'string', 'value' => $_POST['authorizingInfo'])
-            array('fieldName' => 'auth_message', 'type' => 'string', 'value' => $_POST['description'])
+            array('fieldName' => 'pay_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'resultMessage') . '(' . filter_input(INPUT_POST,'resultCode') . ')'),
+            // array('fieldName' => 'pay_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description')),
+            // array('fieldName' => 'auth_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'authorizingInfo'))
+            array('fieldName' => 'auth_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description'))
         );
 
         file_put_contents('E:/log/hkzencart/auth.log', 'historydata:' . json_encode($historyUpdate,true));
@@ -121,7 +121,7 @@
             array('fieldName' => 'orders_id', 'type' => 'integer', 'value' => $order_id),
             array('fieldName' => 'orders_status_id', 'type' => 'integer', 'value' => MODULE_PAYMENT_YJFPAYC_FAIL_STATUS_ID),
             array('fieldName' => 'date_added', 'type' => 'date', 'value' => date('Y-m-d H:i:s')),
-            array('fieldName' => 'comments', 'type' => 'string', 'value' => $_POST['description'])
+            array('fieldName' => 'comments', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description'))
         );
 
         $orderUpdate = array(
@@ -132,7 +132,7 @@
             array('fieldName' => 'status', 'type' => 'integer', 'value' => 5),
             array('fieldName' => 'pay_date', 'type' => 'date', 'value' => date('Y-m-d H:i:s')),
             array('fieldName' => 'pay_status', 'type' => 'string', 'value' => 'fail'),
-            array('fieldName' => 'pay_message', 'type' => 'string', 'value' => $_POST['description'])
+            array('fieldName' => 'pay_message', 'type' => 'string', 'value' => filter_input(INPUT_POST,'description'))
         );
 
         $db->perform(TABLE_ORDERS_STATUS_HISTORY, $statusHistory);
