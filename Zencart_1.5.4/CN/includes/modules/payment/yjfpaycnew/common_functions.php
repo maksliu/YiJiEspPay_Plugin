@@ -11,8 +11,8 @@
     /**
      * @const string product url address
      */
-    
-    define('YJFPAYC_PRODUCT_URL', 'https://api.yiji.com/gateway.html');
+
+    define('YJFPAYC_PRODUCT_URL', 'https://openapiglobal.yiji.com/gateway.html');
 
     /**
      * get pay signature
@@ -41,4 +41,3 @@
         unset($array[$key]);
         return $default;
     }
-
