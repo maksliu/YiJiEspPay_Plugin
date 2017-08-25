@@ -191,7 +191,7 @@ function yjpayesp_gateway_init (){
           $billtoState = empty($order->billing_state) ? trim($order->billing_city) : $order->billing_state;
           //file_put_contents(dirname(__FILE__).'/read.txt',json_encode($request_data)."\n",FILE_APPEND);
           $attachDetails_data = array(
-            'ipAddress'=>$this->get_real_ip(),
+            'ipAddress'=>$_SERVER["HTTP_CLIENT_IP"] ? $_SERVER["HTTP_CLIENT_IP"] :'127.0.0.1',
             'billtoCountry'=>$order->billing_country,
             'billtoState'=> $billtoState,
             'billtoCity'=>trim($order->billing_city),
