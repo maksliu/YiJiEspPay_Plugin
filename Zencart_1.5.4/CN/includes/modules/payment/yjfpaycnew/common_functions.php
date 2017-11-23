@@ -18,6 +18,11 @@
      * get pay signature
      */
     function yjfpaycnew_signature(array $params) {
+        //foreach ($params as $key => $value) {
+        //  if($value == ''){
+        //    unset($params[$key]);
+        //  }
+        //}
         # sort for key
         ksort($params);
 
@@ -26,9 +31,9 @@
             $clientSignatureString .= ($key . '=' . $value . '&');
         }
 
-        $clientSignatureString = substr($clientSignatureString, 0, -1);
-        $clientSignatureString = trim($clientSignatureString) . MODULE_PAYMENT_YJFPAYCNEW_SECRET_KEY;
-
+        //$clientSignatureString = substr($clientSignatureString, 0, -1);
+        $clientSignatureString = trim($clientSignatureString,'&') . trim(MODULE_PAYMENT_YJFPAYCNEW_SECRET_KEY);
+        file_put_contents(__DIR__.'/xx.log',$clientSignatureString,FILE_APPEND);
         return md5($clientSignatureString);
     }
 
